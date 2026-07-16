@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A deterministic local OTA fleet update and diagnostics simulator."
+    />
+    <title>OTA Fleet Diagnostics Lab</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script type="module" src="/static/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">Skip to dashboard</a>
+    <header class="app-header">
+      <a class="brand" href="/" aria-label="OTA Fleet Diagnostics Lab home">
+        <span>OTA Fleet Diagnostics Lab</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a class="nav-link active" href="#fleet">Fleet</a>
+        <a class="nav-link" href="#timeline">Diagnostics</a>
+        <a class="nav-link" href="/openapi.json">API Docs</a>
+      </nav>
+    </header>
+
+    <main id="workspace" class="dashboard">
+      <section class="page-heading" aria-labelledby="page-title">
+        <div>
+          <h1 id="page-title">Fleet command center</h1>
+          <p>Run deterministic OTA updates, inject faults, and inspect every transition.</p>
+        </div>
+        <div class="heading-actions">
+          <button class="button button-primary" id="heading-update-button" type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z" /></svg>
+            Run update
+          </button>
+          <button class="button button-secondary" id="reset-button" type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.34-5.66L4 8.68M4 4v4.68h4.68" /></svg>
+            Reset lab
+          </button>
+        </div>
+      </section>
+
+      <section class="summary-rail" aria-label="Fleet summary">
+        <div class="summary-item summary-cyan">
+          <span class="summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3m14-6h3m-3 6h3m-12-4h4m-4 3h4"/></svg></span>
+          <strong id="total-count">—</strong><span>ECUs</span>
+        </div>
+        <div class="summary-item summary-green">
+          <span class="summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/><path d="M20.5 5.5A5.5 5.5 0 0 0 12 4a5.5 5.5 0 0 0-8.5 1.5C.7 9.8 3.5 15.2 12 21c8.5-5.8 11.3-11.2 8.5-15.5Z"/></svg></span>
+          <strong id="healthy-count">—</strong><span>Healthy</span>
+        </div>
+        <div class="summary-item summary-amber">
+          <span class="summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5m0 3v.1"/></svg></span>
+          <strong id="attention-count">—</strong><span>Attention</span>
+        </div>
+        <div class="summary-item summary-red">
+          <span class="summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7h10l2 3v7l-2 2H7l-2-2v-7l2-3Zm2 0V4m6 3V4M2 11h3m14 0h3"/><circle cx="12" cy="13" r="2"/></svg></span>
+          <strong id="dtc-count">—</strong><span>Active DTCs</span>
+        </div>
+        <div class="vehicle-network" aria-hidden="true">
+          <div class="vehicle-outline"></div>
+          <span class="node node-one"></span><span class="node node-two"></span>
+          <span class="node node-three"></span><span class="node node-four"></span>
+        </div>
+      </section>
+
+      <section id="fleet" class="workspace-grid" aria-label="Fleet workspace">
+        <div class="fleet-panel panel">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>ECU</th><th>Version</th><th>Health</th><th>Update stage</th><th>Voltage</th><th>Connectivity</th></tr>
+              </thead>
+              <tbody id="controller-rows">
+                <tr><td colspan="6" class="loading-cell">Loading fleet…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <footer id="fleet-count">Loading controllers…</footer>
+        </div>
+
+        <article class="detail-panel panel" aria-labelledby="selected-name">
+          <header class="detail-header">
+            <div class="ecu-icon" aria-hidden="true">⌁</div>
+            <div><h2 id="selected-name">Select an ECU</h2><span id="selected-health" class="status-text">—</span></div>
+          </header>
+          <div class="detail-body">
+            <form id="update-form" class="update-form">
+              <label>Target version<input id="target-version" name="target-version" value="2.1.0" required pattern="[0-9]+\.[0-9]+\.[0-9]+" /></label>
+              <label>Fault scenario<select id="fault-scenario" name="fault-scenario">
+                <option value="none">No fault</option>
+                <option value="low_voltage">Low voltage</option>
+                <option value="connectivity_loss">Connectivity loss</option>
+                <option value="checksum_mismatch">Checksum mismatch</option>
+                <option value="install_failure">Install failure</option>
+              </select></label>
+              <p id="current-version" class="field-note">Current version: —</p>
+              <p id="fault-note" class="field-note">Run with no injected faults.</p>
+              <div class="form-actions">
+                <button class="button button-primary" id="update-button" type="submit">
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z" /></svg>
+                  Run update
+                </button>
+                <button class="button button-secondary" id="rollback-button" type="button" disabled>
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.34-5.66L4 8.68M4 4v4.68h4.68" /></svg>
+                  Rollback
+                </button>
+              </div>
+            </form>
+            <aside class="dtc-panel" aria-labelledby="dtc-title">
+              <h3 id="dtc-title">Active DTCs</h3>
+              <div id="dtc-list" class="dtc-list"><p class="empty-state">Select a controller.</p></div>
+            </aside>
+          </div>
+          <footer class="telemetry-strip">
+            <div><span>Voltage</span><strong id="selected-voltage">—</strong></div>
+            <div><span>Connectivity</span><strong id="selected-connectivity">—</strong></div>
+            <div><span>Last seen</span><strong id="selected-last-seen">—</strong></div>
+            <div><span>ECU ID</span><strong id="selected-id">—</strong></div>
+          </footer>
+        </article>
+      </section>
+
+      <section id="timeline" class="timeline-panel panel" aria-labelledby="timeline-title">
+        <header>
+          <div><h2 id="timeline-title">Event timeline</h2><p>Ordered update stages and diagnostic evidence for the selected ECU.</p></div>
+          <div class="timeline-tools">
+            <span id="event-count">0 events</span>
+            <label class="toggle"><input id="auto-scroll" type="checkbox" checked /><span>Auto-scroll</span></label>
+            <button class="button button-secondary button-small" id="export-button" type="button">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M5 18v3h14v-3" /></svg>
+              Export log
+            </button>
+          </div>
+        </header>
+        <div class="timeline-content">
+          <ol id="stage-progress" class="stage-progress" aria-label="Update stages"></ol>
+          <div id="event-log" class="event-log" role="log" aria-live="polite"><p class="empty-state">Select an ECU to inspect its history.</p></div>
+        </div>
+      </section>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </main>
+  </body>
+</html>

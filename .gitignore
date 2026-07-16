@@ -1,3 +1,16 @@
 __pycache__/
 *.pyc
 .coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+coverage.xml
+.env
+.env.*
+htmlcov/
+data/
+*.db
+*.db-shm
+*.db-wal
+test-results/

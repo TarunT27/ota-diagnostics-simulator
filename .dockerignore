@@ -1,0 +1,14 @@
+.git
+.github
+.pytest_cache
+.mypy_cache
+.ruff_cache
+__pycache__
+*.pyc
+*.db
+*.db-shm
+*.db-wal
+.coverage
+coverage.xml
+docs
+tests

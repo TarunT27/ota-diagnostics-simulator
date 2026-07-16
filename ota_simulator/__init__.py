@@ -1,1 +1,3 @@
-"""OTA update and diagnostics starter simulator."""
+"""Deterministic OTA fleet update and diagnostics simulator."""
+
+__version__ = "1.0.0"

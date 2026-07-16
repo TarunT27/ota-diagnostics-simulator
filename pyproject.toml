@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ota-diagnostics-simulator"
+version = "1.0.0"
+description = "Deterministic OTA fleet update and diagnostics simulator"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+dependencies = [
+  "fastapi>=0.116,<1",
+  "pydantic>=2.11,<3",
+  "uvicorn>=0.35,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.28,<1",
+  "mypy>=1.17,<2",
+  "pip-audit>=2.9,<3",
+  "playwright>=1.54,<2",
+  "pytest>=9.0.3,<10",
+  "pytest-cov>=6.2,<8",
+  "pytest-playwright>=0.7,<1",
+  "ruff>=0.12,<1",
+]
+
+[tool.setuptools.packages.find]
+include = ["ota_simulator*"]
+
+[tool.setuptools.package-data]
+ota_simulator = ["static/*", "static/assets/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-config --strict-markers"
+markers = ["e2e: browser end-to-end tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["ota_simulator"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 80
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+packages = ["ota_simulator"]
